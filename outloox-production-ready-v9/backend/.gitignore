@@ -1,0 +1,59 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Logs
+logs/
+*.log
+
+# Spring Boot
+*.jar
+*.war
+
+# Environment Files
+.env
+.env.*
+application-secret.properties
+application-prod.properties
+
+# IDE
+.idea/
+*.iml
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.springBeans
+.sts4-cache/
+
+# VS Code
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary Files
+*.tmp
+*.swp
+
+# Generated Files
+dependency-reduced-pom.xml
+
+# Test Reports
+surefire-reports/
+failsafe-reports/
+
+# Local Database Files
+*.db
+*.sqlite
+
+# Secrets
+*.pem
+*.key
+*.crt

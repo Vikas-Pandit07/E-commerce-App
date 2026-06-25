@@ -1,0 +1,43 @@
+-- Upgrade path for databases created from older OUTLOOX / legacy schema versions.
+-- Safe for local development on MySQL 8+.
+-- Note: IF NOT EXISTS removed - Flyway ensures each migration runs only once
+
+ALTER TABLE products ADD COLUMN original_price DECIMAL(10,2) NULL;
+ALTER TABLE products ADD COLUMN badge VARCHAR(20) NULL;
+ALTER TABLE products ADD COLUMN rating DOUBLE NOT NULL DEFAULT 4.5;
+ALTER TABLE products ADD COLUMN review_count INT NOT NULL DEFAULT 0;
+ALTER TABLE products ADD COLUMN colors_data TEXT NULL;
+ALTER TABLE products ADD COLUMN sizes_data TEXT NULL;
+ALTER TABLE products ADD COLUMN features_data TEXT NULL;
+ALTER TABLE products MODIFY COLUMN status VARCHAR(20) NULL;
+
+ALTER TABLE cart_items ADD COLUMN size_option VARCHAR(50) NULL;
+ALTER TABLE cart_items ADD COLUMN color_option VARCHAR(50) NULL;
+
+ALTER TABLE order_items ADD COLUMN size_option VARCHAR(50) NULL;
+ALTER TABLE order_items ADD COLUMN color_option VARCHAR(50) NULL;
+
+CREATE TABLE site_settings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(120) NOT NULL UNIQUE,
+    setting_value TEXT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+UPDATE products SET slug = CONCAT('product-', product_id) WHERE slug IS NULL OR slug = '';
+UPDATE products SET status = CASE WHEN stock > 0 THEN 'ACTIVE' ELSE 'OUT_OF_STOCK' END WHERE status IS NULL OR status = '';
+UPDATE products SET rating = 4.5 WHERE rating IS NULL OR rating = 0;
+UPDATE products SET review_count = 0 WHERE review_count IS NULL;
+UPDATE cart_items SET size_option = 'Standard' WHERE size_option IS NULL OR size_option = '';
+UPDATE cart_items SET color_option = 'Standard' WHERE color_option IS NULL OR color_option = '';
+UPDATE order_items SET size_option = 'Standard' WHERE size_option IS NULL OR size_option = '';
+UPDATE order_items SET color_option = 'Standard' WHERE color_option IS NULL OR color_option = '';
+
+UPDATE products SET slug = CONCAT('product-', product_id) WHERE slug IS NULL OR slug = '';
+UPDATE products SET status = CASE WHEN stock > 0 THEN 'ACTIVE' ELSE 'OUT_OF_STOCK' END WHERE status IS NULL OR status = '';
+UPDATE products SET rating = 4.5 WHERE rating IS NULL OR rating = 0;
+UPDATE products SET review_count = 0 WHERE review_count IS NULL;
+UPDATE cart_items SET size_option = 'Standard' WHERE size_option IS NULL OR size_option = '';
+UPDATE cart_items SET color_option = 'Standard' WHERE color_option IS NULL OR color_option = '';
+UPDATE order_items SET size_option = 'Standard' WHERE size_option IS NULL OR size_option = '';
+UPDATE order_items SET color_option = 'Standard' WHERE color_option IS NULL OR color_option = '';
