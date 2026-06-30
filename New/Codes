@@ -1641,6 +1641,1093 @@ Configure SSL/HTTPS
 Set up monitoring
 
 🤝 Contributing
+Fork the repository
+
+Create a feature branch
+
+Commit your changes
+
+Push to the branch
+
+Open a Pull Request
+
+📄 License
+Proprietary - All rights reserved © OUTLOOX
+
+📞 Contact
+Email: support@outloox.com
+
+Website: https://outloox.com
+
+---
+
+### 11. SECURITYCONFIG.JAVA
+
+```java
+package com.outloox.config;
+
+import com.outloox.security.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+import jakarta.annotation.PostConstruct;
+
+@Configuration
+@EnableMethodSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+    private final RateLimitingFilter rateLimitingFilter;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
+    private final CorsConfigurationSource corsConfigurationSource;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
+    @PostConstruct
+    public void validateJwtSecret() {
+        if (jwtSecret == null || jwtSecret.length() < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 characters long for production.");
+        }
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
+        requestHandler.setCsrfRequestAttributeName("_csrf");
+
+        http
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(requestHandler)
+            )
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
+            .sessionManagement(session -> 
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler))
+            .headers(headers -> headers
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; " +
+                        "img-src 'self' data: https://res.cloudinary.com; " +
+                        "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; " +
+                        "frame-src https://api.razorpay.com; " +
+                        "style-src 'self' 'unsafe-inline'; " +
+                        "connect-src 'self' https://api.razorpay.com;"))
+                .hsts(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000))
+                .frameOptions(frame -> frame.deny())
+                .xssProtection(xss -> xss.disable())
+                .referrerPolicy(referrer -> referrer
+                    .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                .permissionsPolicy(permissions -> permissions
+                    .policy("camera=(), microphone=(), geolocation=()"))
+            )
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/api/auth/login",
+                    "/api/auth/register",
+                    "/api/auth/forgot-password",
+                    "/api/auth/reset-password",
+                    "/api/auth/verify",
+                    "/api/auth/refresh",
+                    "/api/products/**",
+                    "/api/payments/webhook",
+                    "/api/categories",
+                    "/api/settings",
+                    "/actuator/health",
+                    "/api-docs/**",
+                    "/swagger-ui/**"
+                ).permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**", "/api/cart/**", "/api/orders/**", "/api/payments/**").authenticated()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);
+    }
+}
+12.CORSCONFIG.JAVA
+package com.outloox.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+public class CorsConfig {
+
+    private final List<String> allowedOrigins;
+
+    public CorsConfig(@Value("${app.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(allowedOrigins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        config.setExposedHeaders(List.of("Authorization", "Set-Cookie", "X-Refresh-Token"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
+    }
+}
+13.REDISCONFIG.JAVA
+package com.outloox.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
+
+@Configuration
+@EnableCaching
+public class RedisConfig {
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(30))
+            .disableCachingNullValues()
+            .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+            .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer));
+
+        return RedisCacheManager.builder(redisConnectionFactory)
+            .cacheDefaults(defaultConfig)
+            .withCacheConfiguration("products", defaultConfig.entryTtl(Duration.ofHours(1)))
+            .withCacheConfiguration("product", defaultConfig.entryTtl(Duration.ofHours(1)))
+            .withCacheConfiguration("categories", defaultConfig.entryTtl(Duration.ofHours(2)))
+            .withCacheConfiguration("brands", defaultConfig.entryTtl(Duration.ofHours(2)))
+            .withCacheConfiguration("collections", defaultConfig.entryTtl(Duration.ofHours(2)))
+            .withCacheConfiguration("user", defaultConfig.entryTtl(Duration.ofMinutes(30)))
+            .withCacheConfiguration("settings", defaultConfig.entryTtl(Duration.ofHours(6)))
+            .build();
+    }
+}
+14.CLOUDINARYCONFIG.JAVA
+package com.outloox.config;
+
+import com.cloudinary.Cloudinary;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class CloudinaryConfig {
+
+    @Value("${cloudinary.cloud-name}")
+    private String cloudName;
+
+    @Value("${cloudinary.api-key}")
+    private String apiKey;
+
+    @Value("${cloudinary.api-secret}")
+    private String apiSecret;
+
+    @Bean
+    public Cloudinary cloudinary() {
+        Map<String, String> config = new HashMap<>();
+        config.put("cloud_name", cloudName);
+        config.put("api_key", apiKey);
+        config.put("api_secret", apiSecret);
+        config.put("secure", "true");
+        return new Cloudinary(config);
+    }
+}
+15.MAILCONFIG.JAVA
+package com.outloox.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+
+import java.util.Properties;
+
+@Configuration
+public class MailConfig {
+
+    @Value("${spring.mail.host}")
+    private String host;
+
+    @Value("${spring.mail.port}")
+    private int port;
+
+    @Value("${spring.mail.username}")
+    private String username;
+
+    @Value("${spring.mail.password}")
+    private String password;
+
+    @Bean
+    public JavaMailSender javaMailSender() {
+        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
+        mailSender.setHost(host);
+        mailSender.setPort(port);
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
+
+        Properties props = mailSender.getJavaMailProperties();
+        props.put("mail.transport.protocol", "smtp");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.debug", "false");
+
+        return mailSender;
+    }
+}
+16.AUDITCONFIG.JAVA
+package com.outloox.config;
+
+import com.outloox.security.AuditorAwareImpl;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.AuditorAware;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+
+@Configuration
+@EnableJpaAuditing(auditorAwareRef = "auditorAware")
+public class AuditConfig {
+
+    @Bean
+    public AuditorAware<Long> auditorAware() {
+        return new AuditorAwareImpl();
+    }
+}
+17.WEBMVCCONFIG.JAVA
+java
+package com.outloox.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+    // Additional web configuration if needed
+}
+18. OPENAPICONFIG.JAVA
+package com.outloox.config;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI outlooxOpenAPI() {
+        SecurityScheme securityScheme = new SecurityScheme()
+            .type(SecurityScheme.Type.HTTP)
+            .scheme("bearer")
+            .bearerFormat("JWT")
+            .name("Authorization");
+
+        Components components = new Components()
+            .addSecuritySchemes("bearerAuth", securityScheme);
+
+        return new OpenAPI()
+            .info(new Info()
+                .title("OUTLOOX API")
+                .description("Enterprise E-Commerce Platform API for OUTLOOX Clothing & Footwear")
+                .version("2.0.0")
+                .contact(new Contact()
+                    .name("OUTLOOX Support")
+                    .email("support@outloox.com"))
+                .license(new License()
+                    .name("Proprietary")
+                    .url("https://outloox.com")))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+            .components(components);
+    }
+}
+19.BASEENTITY.JAVA
+package com.outloox.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
+public abstract class BaseEntity {
+
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @CreatedBy
+    @Column(name = "created_by", updatable = false)
+    private Long createdBy;
+
+    @LastModifiedBy
+    @Column(name = "updated_by")
+    private Long updatedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+}
+20.USER.JAVA
+package com.outloox.entity;
+
+import com.outloox.entity.enums.Role;
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "users")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class User extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
+    private Integer userId;
+
+    @Column(unique = true, nullable = false, length = 50)
+    private String username;
+
+    @Column(unique = true, nullable = false, length = 150)
+    private String email;
+
+    @Column(nullable = false, length = 255)
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Role role = Role.CUSTOMER;
+
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private boolean active = true;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @Column(name = "last_login_ip", length = 45)
+    private String lastLoginIp;
+
+    @Column(name = "login_attempts")
+    @Builder.Default
+    private Integer loginAttempts = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Address> addresses = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Order> orders = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private RefreshToken refreshToken;
+
+    public boolean isLocked() {
+        return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
+    }
+
+    public void incrementLoginAttempts() {
+        this.loginAttempts = (this.loginAttempts == null ? 0 : this.loginAttempts) + 1;
+    }
+
+    public void resetLoginAttempts() {
+        this.loginAttempts = 0;
+        this.lockedUntil = null;
+    }
+
+    public void lockAccount(int minutes) {
+        this.lockedUntil = LocalDateTime.now().plusMinutes(minutes);
+    }
+}
+FRONTEND FILES
+1. PACKAGE.JSON
+{
+  "name": "outloox-frontend",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-toast": "^1.1.5",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "framer-motion": "^11.0.3",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.21.3",
+    "react-select": "^5.8.0",
+    "react-toastify": "^10.0.4",
+    "tailwind-merge": "^2.2.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.4.33",
+    "prettier": "^3.1.1",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vitest": "^1.0.4"
+  }
+}
+2.VITE.CONFIG.TS
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:9090',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['framer-motion', 'lucide-react'],
+        },
+      },
+    },
+    minify: 'terser',
+    sourcemap: false,
+  },
+});
+
+3.TAILWIND.CONFIG.JS
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: ["class"],
+  content: [
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
+  ],
+  theme: {
+    container: {
+      center: true,
+      padding: "2rem",
+      screens: {
+        "2xl": "1400px",
+      },
+    },
+    extend: {
+      colors: {
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "accordion-down": {
+          from: { height: 0 },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: 0 },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+};
+4.INDEX.CSS
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0c0c0c;
+    --foreground: #ffffff;
+    --card: #141210;
+    --card-foreground: #ffffff;
+    --popover: #0c0c0c;
+    --popover-foreground: #ffffff;
+    --primary: #7c3aed;
+    --primary-foreground: #ffffff;
+    --secondary: #1c1917;
+    --secondary-foreground: #ffffff;
+    --muted: #292524;
+    --muted-foreground: rgba(255, 255, 255, 0.55);
+    --accent: #7c3aed;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.08);
+    --ring: #7c3aed;
+    --radius: 0.5rem;
+  }
+
+  .light {
+    --background: #ffffff;
+    --foreground: #0c0c0c;
+    --card: #f8f7f4;
+    --card-foreground: #0c0c0c;
+    --popover: #ffffff;
+    --popover-foreground: #0c0c0c;
+    --primary: #7c3aed;
+    --primary-foreground: #ffffff;
+    --secondary: #f0eeea;
+    --secondary-foreground: #0c0c0c;
+    --muted: #e8e5e0;
+    --muted-foreground: rgba(12, 12, 12, 0.55);
+    --accent: #7c3aed;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    --border: rgba(12, 12, 12, 0.08);
+    --input: rgba(12, 12, 12, 0.08);
+    --ring: #7c3aed;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Oswald', 'Inter', system-ui, sans-serif;
+  }
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--foreground) 0%, var(--muted-foreground) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.5); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+5.MAIN.TSX
+tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+6. APP.TSX
+import { AnimatePresence, motion } from "framer-motion";
+import { Suspense, lazy } from "react";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import Footer from "./components/Footer";
+import Header from "./components/Header";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import ProtectedRoute from "./components/ui/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
+import { useCart } from "./context/CartContext";
+import { ProductsProvider } from "./context/ProductsContext";
+import { SettingsProvider } from "./context/SettingsContext";
+import { ToastProvider } from "./context/ToastContext";
+import { WishlistProvider } from "./context/WishlistContext";
+
+const Home = lazy(() => import("./pages/Home"));
+const Shop = lazy(() => import("./pages/Shop"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const About = lazy(() => import("./pages/About"));
+const Profile = lazy(() => import("./pages/Profile"));
+const OrderDetail = lazy(() => import("./pages/OrderDetail"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Login = lazy(() => import("./pages/auth/Login"));
+const Register = lazy(() => import("./pages/auth/Register"));
+
+const pageVariants = {
+  initial: { opacity: 0, y: 12, scale: 0.995 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -12, scale: 0.995 },
+};
+
+const pageTransition = {
+  duration: 0.45,
+  ease: [0.22, 1, 0.36, 1] as const,
+};
+
+function PageLoader() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="flex items-center gap-3 text-muted-foreground">
+        <span className="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <span className="uppercase tracking-widest text-xs">Loading</span>
+      </div>
+    </div>
+  );
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  const cart = useCart();
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header cart={cart} />
+      <main className="flex-1">
+        <Suspense fallback={<PageLoader />}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname + location.search}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={pageVariants}
+              transition={pageTransition}
+            >
+              <Routes location={location}>
+                <Route path="/" element={<Home />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/product/:id" element={<ProductDetail cart={cart} />} />
+                <Route path="/cart" element={<Cart cart={cart} />} />
+                <Route path="/wishlist" element={<Wishlist />} />
+                <Route path="/checkout" element={<ProtectedRoute><Checkout cart={cart} /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/about" element={<About />} />
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <ToastProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <ProductsProvider>
+              <WishlistProvider>
+                <BrowserRouter>
+                  <AnimatedRoutes />
+                </BrowserRouter>
+              </WishlistProvider>
+            </ProductsProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </ToastProvider>
+    </ErrorBoundary>
+  );
+}
+7.CLIENT (APICLIENT.TS)
+import type { ApiErrorResponse } from '../lib/types';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9090';
+
+export class ApiClientError extends Error {
+  status?: number;
+  fieldErrors?: Record<string, string>;
+
+  constructor(message: string, details?: ApiErrorResponse) {
+    super(message);
+    this.name = 'ApiClientError';
+    this.status = details?.status;
+    this.fieldErrors = details?.fieldErrors;
+  }
+}
+
+type ApiRequestOptions = Omit<RequestInit, 'body'> & { body?: unknown };
+
+export async function apiRequest<T>(
+  endpoint: string,
+  init: ApiRequestOptions = {},
+): Promise<T> {
+  const { body, headers, ...rest } = init;
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(headers || {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    ...rest,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new ApiClientError(
+      data?.message || data?.error || 'Request failed',
+      data as ApiErrorResponse,
+    );
+  }
+
+  return data as T;
+}
+
+export { BASE_URL };
+
+8. AUTH SERVICE (AUTHSERVICE.TS)
+import type { AuthUser, LoginPayload, RegisterPayload } from '../lib/types';
+import { apiRequest } from './apiClient';
+
+export interface VerifyAuthResponse {
+  authenticated: boolean;
+  username: string;
+  email: string;
+  role: string;
+}
+
+export interface LoginResponse {
+  username: string;
+  email: string;
+  token: string;
+}
+
+export function loginUser(payload: LoginPayload) {
+  return apiRequest<LoginResponse>('/api/auth/login', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function registerUser(payload: RegisterPayload) {
+  return apiRequest<{ username: string; email: string }>('/api/auth/register', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function logoutUser() {
+  return apiRequest<{ message: string }>('/api/auth/logout', {
+    method: 'POST',
+  });
+}
+
+export function verifyAuth() {
+  return apiRequest<VerifyAuthResponse>('/api/auth/verify');
+}
+
+export function forgotPassword(email: string) {
+  return apiRequest<{ message: string }>('/api/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  });
+}
+
+export function resetPassword(payload: { token: string; newPassword: string; confirmPassword: string }) {
+  return apiRequest<{ message: string }>('/api/auth/reset-password', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function refreshToken() {
+  return apiRequest<{ accessToken: string }>('/api/auth/refresh', {
+    method: 'POST',
+  });
+}
+
+export function toAuthUser(data: VerifyAuthResponse): AuthUser {
+  return {
+    username: data.username,
+    email: data.email,
+    role: data.role,
+  };
+}
+9.
+AUTH CONTEXT (AUTHCONTEXT.TSX)
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { loginUser, logoutUser, registerUser, toAuthUser, verifyAuth } from '../api/authService';
+import type { AuthUser, LoginPayload, RegisterPayload } from '../lib/types';
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
+  loading: boolean;
+  login: (payload: LoginPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshAuth = async () => {
+    try {
+      const data = await verifyAuth();
+      if (data.authenticated) {
+        setUser(toAuthUser(data));
+      } else {
+        setUser(null);
+      }
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshAuth();
+  }, []);
+
+  const login = async (payload: LoginPayload) => {
+    await loginUser(payload);
+    await refreshAuth();
+  };
+
+  const register = async (payload: RegisterPayload) => {
+    await registerUser(payload);
+  };
+
+  const logout = async () => {
+    await logoutUser();
+    setUser(null);
+  };
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isAdmin: user?.role?.toUpperCase() === 'ADMIN',
+      loading,
+      login,
+      register,
+      logout,
+      refreshAuth,
+    }),
+    [user, loading],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+}
 
 
 # 🚀 OUTLOOX - CONTINUED: COMPLETE BACKEND FILES
