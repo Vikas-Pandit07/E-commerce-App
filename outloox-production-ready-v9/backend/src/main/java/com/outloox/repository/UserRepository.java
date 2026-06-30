@@ -1,35 +1,49 @@
 package com.outloox.repository;
 
-import com.outloox.entity.Role;
 import com.outloox.entity.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import com.outloox.entity.enums.Role;
+import com.outloox.entity.enums.UserStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
+@Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
-	// optional prevents nullpointer exception
-    Optional<User> findByUsername(String username);
 
-    Optional<User> findByEmail(String email);
-    
-    Optional<User> findByUsernameOrEmail(String username, String email);
- 
-    //existence check for validation
-    boolean existsByUsername(String username);
+    Optional<User> findByUsernameAndDeletedAtIsNull(String username);
 
-    boolean existsByEmail(String email);
-    
-    // active user check
-    Optional<User> findByUsernameAndActiveTrue(String username);
-    
-    // total user count by role
-    Long countByRole(@Param("role") Role  role);
+    Optional<User> findByEmailAndDeletedAtIsNull(String email);
 
-    List<User> findByRole(Role role, Pageable pageable);
+    Optional<User> findByUsernameOrEmailAndDeletedAtIsNull(String username, String email);
 
-    List<User> findAllByOrderByCreatedAtDesc();
+    Optional<User> findByUsernameAndActiveTrueAndDeletedAtIsNull(String username);
+
+    boolean existsByUsernameAndDeletedAtIsNull(String username);
+
+    boolean existsByEmailAndDeletedAtIsNull(String email);
+
+    Long countByRoleAndDeletedAtIsNull(Role role);
+
+    Page<User> findByRoleAndDeletedAtIsNull(Role role, Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.deletedAt IS NULL AND u.createdAt >= :from")
+    long countNewUsersFrom(@Param("from") LocalDateTime from);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.lastLoginAt = :loginTime, u.lastLoginIp = :ip, u.loginAttempts = 0 WHERE u.userId = :userId")
+    void updateLastLogin(@Param("userId") Integer userId, @Param("loginTime") LocalDateTime loginTime, @Param("ip") String ip);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE User u SET u.loginAttempts = u.loginAttempts + 1 WHERE u.userId = :userId")
+    void incrementLoginAttempts(@Param("userId") Integer userId);
 }
