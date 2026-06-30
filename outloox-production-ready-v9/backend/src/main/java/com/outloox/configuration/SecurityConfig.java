@@ -1,4 +1,4 @@
-package com.outloox.config;
+package com.outloox.configuration;
 
 import com.outloox.security.*;
 import lombok.RequiredArgsConstructor;
