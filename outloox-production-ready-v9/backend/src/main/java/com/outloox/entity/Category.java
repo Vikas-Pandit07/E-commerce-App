@@ -1,42 +1,43 @@
 package com.outloox.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "categories")
-public class Category {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Category extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int categoryId;
+    @Column(name = "category_id")
+    private Integer categoryId;
 
-	@Column(name = "category_name", nullable = false)
+    @Column(name = "category_name", nullable = false, unique = true, length = 100)
     private String categoryName;
-    
+
     @Column(columnDefinition = "TEXT")
-	private String description;
+    private String description;
 
-	public int getCategoryId() {
-		return categoryId;
-	}
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
-	public void setCategoryId(int categoryId) {
-		this.categoryId = categoryId;
-	}
+    @Column(name = "display_order")
+    @Builder.Default
+    private Integer displayOrder = 0;
 
-	public String getCategoryName() {
-		return categoryName;
-	}
+    @Column(name = "is_active")
+    @Builder.Default
+    private Boolean isActive = true;
 
-	public void setCategoryName(String categoryName) {
-		this.categoryName = categoryName;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Product> products = new ArrayList<>();
 }
