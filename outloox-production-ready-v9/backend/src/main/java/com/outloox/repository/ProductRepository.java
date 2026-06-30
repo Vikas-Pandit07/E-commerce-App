@@ -1,32 +1,46 @@
 package com.outloox.repository;
 
-import com.outloox.entity.Category;
 import com.outloox.entity.Product;
-import com.outloox.entity.Status;
-import jakarta.persistence.LockModeType;
+import com.outloox.entity.enums.ProductStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Integer> {
 
-    List<Product> findByCategory(Category category);
+    @EntityGraph(attributePaths = {"category", "images"})
+    Page<Product> findByStatusNot(ProductStatus status, Pageable pageable);
 
-    List<Product> findByCategory_CategoryNameIgnoreCaseAndStatusNot(String categoryName, Status status);
+    @EntityGraph(attributePaths = {"category", "images"})
+    Page<Product> findByCategory_CategoryNameIgnoreCaseAndStatusNot(String categoryName, ProductStatus status, Pageable pageable);
 
-    List<Product> findByStatusNot(Status status);
+    @EntityGraph(attributePaths = {"category", "images"})
+    Optional<Product> findBySlugAndDeletedAtIsNull(String slug);
 
-    Optional<Product> findBySlugIgnoreCase(String slug);
+    @EntityGraph(attributePaths = {"category", "images"})
+    Optional<Product> findByIdAndDeletedAtIsNull(Integer id);
 
-    boolean existsBySlug(String slug);
+    boolean existsBySlugAndDeletedAtIsNull(String slug);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT p FROM Product p WHERE p.productId = :productId")
+    @Query("SELECT p FROM Product p WHERE p.productId = :productId AND p.deletedAt IS NULL")
     Optional<Product> findByIdForUpdate(@Param("productId") Integer productId);
+
+    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL AND p.status = 'ACTIVE' AND p.isFeatured = true")
+    List<Product> findFeaturedProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL AND p.status = 'ACTIVE' AND p.isNewArrival = true")
+    List<Product> findNewArrivals(Pageable pageable);
+
+    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL AND p.status = 'ACTIVE' AND p.isBestSeller = true")
+    List<Product> findBestSellers(Pageable pageable);
 }
