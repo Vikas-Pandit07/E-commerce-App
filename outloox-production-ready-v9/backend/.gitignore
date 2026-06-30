@@ -1,3 +1,17 @@
+# Compiled
+*.class
+*.log
+logs/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
 # Maven
 target/
 pom.xml.tag
@@ -5,55 +19,43 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
-
-# Logs
-logs/
-*.log
-
-# Spring Boot
-*.jar
-*.war
-
-# Environment Files
-.env
-.env.*
-application-secret.properties
-application-prod.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
 
 # IDE
 .idea/
+*.iws
 *.iml
+*.ipr
+out/
+.idea_modules/
 
-# Eclipse / STS
+# Eclipse
+.settings/
 .project
 .classpath
-.settings/
-.springBeans
-.sts4-cache/
+.metadata
+bin/
+tmp/
 
-# VS Code
+# VSCode
 .vscode/
+*.code-workspace
 
-# OS Files
+# OS
 .DS_Store
 Thumbs.db
 
-# Temporary Files
-*.tmp
-*.swp
+# Env
+.env
+.env.local
+.env.production
+.env.development
 
-# Generated Files
-dependency-reduced-pom.xml
-
-# Test Reports
-surefire-reports/
-failsafe-reports/
-
-# Local Database Files
-*.db
-*.sqlite
-
-# Secrets
-*.pem
-*.key
-*.crt
+# Application specific
+logs/
+*.pid
+*.seed
+*.lock
