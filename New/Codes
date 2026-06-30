@@ -1,3 +1,1648 @@
+# 🚀 OUTLOOX - COMPLETE PROJECT FILES
+
+I'll provide **every file** for both backend and frontend according to your structure. This is **production-ready** code.
+
+---
+
+## 📦 BACKEND FILES
+
+### 1. POM.XML
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.outloox</groupId>
+    <artifactId>outloox-backend</artifactId>
+    <version>2.0.0</version>
+    <name>OUTLOOX Backend</name>
+    <description>Enterprise E-Commerce Platform for OUTLOOX Clothing & Footwear</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <jjwt.version>0.12.3</jjwt.version>
+        <cloudinary.version>1.38.0</cloudinary.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Boot Core -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- OAuth2 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <!-- Database -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!-- Cloudinary -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>${cloudinary.version}</version>
+        </dependency>
+
+        <!-- Razorpay -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+
+        <!-- MapStruct -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- OpenAPI / Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- Micrometer for Prometheus -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Env support -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+### 2. APPLICATION.YML
+
+```yaml
+spring:
+  application:
+    name: outloox-backend
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:outloox}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:20}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: OutlooxHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${JPA_SHOW_SQL:false}
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: ${JPA_FORMAT_SQL:false}
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+        debug: false
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:9090}
+  forward-headers-strategy: framework
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-long-random-secret-key-at-least-32-characters}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  issuer: outloox.com
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  cookie:
+    secure: ${APP_COOKIE_SECURE:false}
+    same-site: ${APP_COOKIE_SAME_SITE:Lax}
+    domain: ${APP_COOKIE_DOMAIN:}
+  seed:
+    demo-catalog: ${APP_SEED_DEMO_CATALOG:true}
+
+security:
+  rate-limit:
+    enabled: ${SECURITY_RATE_LIMIT_ENABLED:true}
+    window-seconds: ${SECURITY_RATE_LIMIT_WINDOW_SECONDS:60}
+    auth-max-requests: ${SECURITY_RATE_LIMIT_AUTH_MAX_REQUESTS:20}
+    payment-max-requests: ${SECURITY_RATE_LIMIT_PAYMENT_MAX_REQUESTS:30}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.outloox: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/outloox.log
+    max-size: 100MB
+    max-history: 30
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
+    enabled: ${SWAGGER_ENABLED:true}
+  show-actuator: false
+```
+
+### 3. APPLICATION-PROD.YML
+
+```yaml
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.outloox: WARN
+    root: ERROR
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+```
+
+### 4. APPLICATION-DEV.YML
+
+```yaml
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    com.outloox: DEBUG
+    org.springframework.security: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true
+```
+
+### 5. DOCKERFILE
+
+```dockerfile
+FROM openjdk:21-jdk-slim AS builder
+
+WORKDIR /app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+
+COPY src src
+RUN ./mvnw clean package -DskipTests
+
+FROM openjdk:21-jdk-slim
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+RUN addgroup --system --gid 1000 appgroup && \
+    adduser --system --uid 1000 --gid 1000 appuser
+
+USER appuser
+
+EXPOSE 9090
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### 6. DOCKER-COMPOSE.YML
+
+```yaml
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: outloox-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: outloox
+      MYSQL_USER: outloox_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: outloox-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: outloox-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: outloox
+      DB_USERNAME: outloox_user
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  outloox-network:
+    driver: bridge
+```
+
+### 7. .ENV.EXAMPLE
+
+```env
+# Database
+DB_PASSWORD=your-strong-password-here
+
+# JWT
+JWT_SECRET=your-32-character-plus-secret-key-here
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Razorpay
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
+
+# Email
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Application
+APP_FRONTEND_URL=http://localhost:3000
+APP_CORS_ALLOWED_ORIGINS=http://localhost:3000
+APP_COOKIE_SECURE=false
+APP_COOKIE_SAME_SITE=Lax
+
+# JWT Expiration
+JWT_EXPIRATION=86400000
+JWT_REFRESH_EXPIRATION=604800000
+
+# Logging
+LOG_LEVEL=INFO
+```
+
+### 8. GITIGNORE
+
+```gitignore
+# Compiled class file
+*.class
+
+# Log file
+*.log
+logs/
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.settings/
+.project
+.classpath
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+
+# NetBeans
+nbproject/
+nbdist/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Env files
+.env
+.env.local
+.env.production
+.env.development
+
+# Application specific
+outloox-backend/logs/
+outloox-backend/*.log
+*.pid
+*.seed
+*.lock
+```
+
+### 9. OUTLOOXAPPLICATION.JAVA
+
+```java
+package com.outloox;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class OutlooxApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(OutlooxApplication.class, args);
+    }
+}
+```
+
+### 10. README.MD
+
+```markdown
+# OUTLOOX - Enterprise E-Commerce Platform
+
+## 🚀 Overview
+
+OUTLOOX is a premium clothing and footwear e-commerce platform built with Spring Boot 3.3.2 and React 18. It's designed for scale, security, and performance.
+
+## 📋 Features
+
+- **Authentication**: JWT with refresh token rotation, OAuth2 Google login
+- **Shopping**: Cart, wishlist, guest cart, checkout
+- **Payments**: Razorpay integration with webhooks
+- **Admin**: Full dashboard with analytics and inventory management
+- **Performance**: Redis caching, database indexes, pagination
+- **Security**: CSP headers, rate limiting, CSRF protection
+
+## 🛠️ Tech Stack
+
+### Backend
+- Java 21
+- Spring Boot 3.3.2
+- Spring Security 6
+- JWT with refresh tokens
+- MySQL 8.0
+- Redis 7
+- Flyway migrations
+- Cloudinary for images
+- Razorpay for payments
+
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- React Router 6
+
+### DevOps
+- Docker
+- Docker Compose
+- GitHub Actions
+- Nginx
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Java 21
+- Node.js 20+
+- Docker (optional)
+
+### Backend Setup
+
+```bash
+cd outloox-backend
+./mvnw clean install
+./mvnw spring-boot:run
+```
+
+### Frontend Setup
+
+```bash
+cd outloox-frontend
+npm install
+npm run dev
+```
+
+### Docker Setup
+
+```bash
+# Copy environment file
+cp .env.example .env
+
+# Start all services
+docker-compose up -d
+```
+
+## 📁 Project Structure
+
+```
+outloox-backend/
+├── src/main/java/com/outloox/
+│   ├── config/         - Configuration classes
+│   ├── controller/     - REST controllers
+│   ├── entity/         - JPA entities
+│   ├── repository/     - JPA repositories
+│   ├── service/        - Business logic
+│   ├── security/       - Security configuration
+│   ├── dto/            - Data transfer objects
+│   └── exception/      - Global exception handling
+└── src/main/resources/
+    ├── db/migration/   - Flyway migrations
+    └── application.yml - Configuration
+```
+
+## 🔐 Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DB_PASSWORD` | MySQL password | root |
+| `JWT_SECRET` | JWT signing key | (required) |
+| `RAZORPAY_KEY_ID` | Razorpay key ID | (required) |
+| `RAZORPAY_KEY_SECRET` | Razorpay secret | (required) |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | (required) |
+
+## 📊 API Documentation
+
+Ecommerce Audit
+🚀 OUTLOOX - COMPLETE PROJECT FILES
+I'll provide every file for both backend and frontend according to your structure. This is production-ready code.
+
+📦 BACKEND FILES
+1. POM.XML
+xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.outloox</groupId>
+    <artifactId>outloox-backend</artifactId>
+    <version>2.0.0</version>
+    <name>OUTLOOX Backend</name>
+    <description>Enterprise E-Commerce Platform for OUTLOOX Clothing & Footwear</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <jjwt.version>0.12.3</jjwt.version>
+        <cloudinary.version>1.38.0</cloudinary.version>
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <testcontainers.version>1.19.3</testcontainers.version>
+    </properties>
+
+    <dependencies>
+        <!-- Spring Boot Core -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- OAuth2 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <!-- Database -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
+        <!-- Cloudinary -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>${cloudinary.version}</version>
+        </dependency>
+
+        <!-- Razorpay -->
+        <dependency>
+            <groupId>com.razorpay</groupId>
+            <artifactId>razorpay-java</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+
+        <!-- MapStruct -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- OpenAPI / Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- Micrometer for Prometheus -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Env support -->
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+2. APPLICATION.YML
+yaml
+spring:
+  application:
+    name: outloox-backend
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:outloox}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:20}
+      minimum-idle: ${DB_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: OutlooxHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${JPA_SHOW_SQL:false}
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: ${JPA_FORMAT_SQL:false}
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+        debug: false
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+
+server:
+  port: ${SERVER_PORT:9090}
+  forward-headers-strategy: framework
+
+jwt:
+  secret: ${JWT_SECRET:change-me-to-a-long-random-secret-key-at-least-32-characters}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  issuer: outloox.com
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
+
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:}
+
+app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  cookie:
+    secure: ${APP_COOKIE_SECURE:false}
+    same-site: ${APP_COOKIE_SAME_SITE:Lax}
+    domain: ${APP_COOKIE_DOMAIN:}
+  seed:
+    demo-catalog: ${APP_SEED_DEMO_CATALOG:true}
+
+security:
+  rate-limit:
+    enabled: ${SECURITY_RATE_LIMIT_ENABLED:true}
+    window-seconds: ${SECURITY_RATE_LIMIT_WINDOW_SECONDS:60}
+    auth-max-requests: ${SECURITY_RATE_LIMIT_AUTH_MAX_REQUESTS:20}
+    payment-max-requests: ${SECURITY_RATE_LIMIT_PAYMENT_MAX_REQUESTS:30}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.outloox: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/outloox.log
+    max-size: 100MB
+    max-history: 30
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
+    enabled: ${SWAGGER_ENABLED:true}
+  show-actuator: false
+3. APPLICATION-PROD.YML
+yaml
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+  thymeleaf:
+    cache: true
+
+logging:
+  level:
+    com.outloox: WARN
+    root: ERROR
+
+springdoc:
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus
+4. APPLICATION-DEV.YML
+yaml
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+  thymeleaf:
+    cache: false
+
+logging:
+  level:
+    com.outloox: DEBUG
+    org.springframework.security: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true
+5. DOCKERFILE
+dockerfile
+FROM openjdk:21-jdk-slim AS builder
+
+WORKDIR /app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+
+COPY src src
+RUN ./mvnw clean package -DskipTests
+
+FROM openjdk:21-jdk-slim
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+RUN addgroup --system --gid 1000 appgroup && \
+    adduser --system --uid 1000 --gid 1000 appuser
+
+USER appuser
+
+EXPOSE 9090
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
+6. DOCKER-COMPOSE.YML
+yaml
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: outloox-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: outloox
+      MYSQL_USER: outloox_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-root}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: outloox-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: outloox-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: outloox
+      DB_USERNAME: outloox_user
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:3000}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:-false}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - outloox-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  outloox-network:
+    driver: bridge
+7. .ENV.EXAMPLE
+env
+# Database
+DB_PASSWORD=your-strong-password-here
+
+# JWT
+JWT_SECRET=your-32-character-plus-secret-key-here
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Razorpay
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
+
+# Email
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Application
+APP_FRONTEND_URL=http://localhost:3000
+APP_CORS_ALLOWED_ORIGINS=http://localhost:3000
+APP_COOKIE_SECURE=false
+APP_COOKIE_SAME_SITE=Lax
+
+# JWT Expiration
+JWT_EXPIRATION=86400000
+JWT_REFRESH_EXPIRATION=604800000
+
+# Logging
+LOG_LEVEL=INFO
+8. GITIGNORE
+gitignore
+# Compiled class file
+*.class
+
+# Log file
+*.log
+logs/
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+.idea_modules/
+
+# Eclipse
+.settings/
+.project
+.classpath
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.loadpath
+
+# NetBeans
+nbproject/
+nbdist/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# OSX
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Env files
+.env
+.env.local
+.env.production
+.env.development
+
+# Application specific
+outloox-backend/logs/
+outloox-backend/*.log
+*.pid
+*.seed
+*.lock
+9. OUTLOOXAPPLICATION.JAVA
+java
+package com.outloox;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class OutlooxApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(OutlooxApplication.class, args);
+    }
+}
+10. README.MD
+markdown
+# OUTLOOX - Enterprise E-Commerce Platform
+
+## 🚀 Overview
+
+OUTLOOX is a premium clothing and footwear e-commerce platform built with Spring Boot 3.3.2 and React 18. It's designed for scale, security, and performance.
+
+## 📋 Features
+
+- **Authentication**: JWT with refresh token rotation, OAuth2 Google login
+- **Shopping**: Cart, wishlist, guest cart, checkout
+- **Payments**: Razorpay integration with webhooks
+- **Admin**: Full dashboard with analytics and inventory management
+- **Performance**: Redis caching, database indexes, pagination
+- **Security**: CSP headers, rate limiting, CSRF protection
+
+## 🛠️ Tech Stack
+
+### Backend
+- Java 21
+- Spring Boot 3.3.2
+- Spring Security 6
+- JWT with refresh tokens
+- MySQL 8.0
+- Redis 7
+- Flyway migrations
+- Cloudinary for images
+- Razorpay for payments
+
+### Frontend
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- React Router 6
+
+### DevOps
+- Docker
+- Docker Compose
+- GitHub Actions
+- Nginx
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Java 21
+- Node.js 20+
+- Docker (optional)
+
+### Backend Setup
+
+```bash
+cd outloox-backend
+./mvnw clean install
+./mvnw spring-boot:run
+Frontend Setup
+bash
+cd outloox-frontend
+npm install
+npm run dev
+Docker Setup
+bash
+# Copy environment file
+cp .env.example .env
+
+# Start all services
+docker-compose up -d
+📁 Project Structure
+text
+outloox-backend/
+├── src/main/java/com/outloox/
+│   ├── config/         - Configuration classes
+│   ├── controller/     - REST controllers
+│   ├── entity/         - JPA entities
+│   ├── repository/     - JPA repositories
+│   ├── service/        - Business logic
+│   ├── security/       - Security configuration
+│   ├── dto/            - Data transfer objects
+│   └── exception/      - Global exception handling
+└── src/main/resources/
+    ├── db/migration/   - Flyway migrations
+    └── application.yml - Configuration
+🔐 Environment Variables
+Variable	Description	Default
+DB_PASSWORD	MySQL password	root
+JWT_SECRET	JWT signing key	(required)
+RAZORPAY_KEY_ID	Razorpay key ID	(required)
+RAZORPAY_KEY_SECRET	Razorpay secret	(required)
+CLOUDINARY_CLOUD_NAME	Cloudinary cloud name	(required)
+📊 API Documentation
+Swagger UI: http://localhost:9090/swagger-ui
+
+OpenAPI: http://localhost:9090/api-docs
+
+🧪 Testing
+bash
+# Backend tests
+./mvnw test
+
+# Frontend tests
+npm test
+📦 Deployment
+Set environment variables
+
+Build Docker images
+
+Deploy using docker-compose
+
+Configure SSL/HTTPS
+
+Set up monitoring
+
+🤝 Contributing
+
+
 # 🚀 OUTLOOX - CONTINUED: COMPLETE BACKEND FILES
 
 ## 21. ADDRESS.JAVA
