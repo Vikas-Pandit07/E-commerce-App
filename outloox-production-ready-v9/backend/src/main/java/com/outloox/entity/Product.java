@@ -1,21 +1,26 @@
 package com.outloox.entity;
 
-import com.outloox.util.ProductCatalogMapper;
+import com.outloox.entity.enums.ProductStatus;
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
-public class Product {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int productId;
-
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
+    @Column(name = "product_id")
+    private Integer productId;
 
     @Column(nullable = false, length = 120)
     private String name;
@@ -26,6 +31,9 @@ public class Product {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "short_description", length = 500)
+    private String shortDescription;
+
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
@@ -33,16 +41,19 @@ public class Product {
     private BigDecimal originalPrice;
 
     @Column(nullable = false)
-    private int stock;
+    @Builder.Default
+    private Integer stock = 0;
 
     @Column(length = 20)
     private String badge;
 
     @Column(nullable = false)
-    private double rating = 4.5;
+    @Builder.Default
+    private Double rating = 4.5;
 
     @Column(name = "review_count", nullable = false)
-    private int reviewCount = 0;
+    @Builder.Default
+    private Integer reviewCount = 0;
 
     @Column(name = "colors_data", columnDefinition = "TEXT")
     private String colorsData;
@@ -55,138 +66,51 @@ public class Product {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Status status = Status.ACTIVE;
+    @Builder.Default
+    private ProductStatus status = ProductStatus.ACTIVE;
 
-    @PrePersist
-    @PreUpdate
-    protected void normalizeCatalogFields() {
-        if (slug == null || slug.isBlank()) {
-            slug = ProductCatalogMapper.slugify(name);
-        } else {
-            slug = ProductCatalogMapper.slugify(slug);
+    @Column(name = "view_count")
+    @Builder.Default
+    private Long viewCount = 0L;
+
+    @Column(name = "purchase_count")
+    @Builder.Default
+    private Long purchaseCount = 0L;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ProductVariant> variants = new ArrayList<>();
+
+    public boolean isInStock() {
+        return stock > 0 && status == ProductStatus.ACTIVE;
+    }
+
+    public BigDecimal getDiscountPercentage() {
+        if (originalPrice != null && originalPrice.compareTo(BigDecimal.ZERO) > 0) {
+            return originalPrice.subtract(price)
+                .divide(originalPrice, 4, java.math.RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(0, java.math.RoundingMode.HALF_UP);
         }
-        badge = ProductCatalogMapper.normalizeBadge(badge);
-        originalPrice = ProductCatalogMapper.nullablePrice(originalPrice);
-        ProductCatalogMapper.applyDerivedStatus(this);
+        return BigDecimal.ZERO;
     }
 
-    public int getProductId() {
-        return productId;
-    }
-
-    public void setProductId(int productId) {
-        this.productId = productId;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSlug() {
-        return slug;
-    }
-
-    public void setSlug(String slug) {
-        this.slug = slug;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
-    }
-
-    public BigDecimal getOriginalPrice() {
-        return originalPrice;
-    }
-
-    public void setOriginalPrice(BigDecimal originalPrice) {
-        this.originalPrice = originalPrice;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    public void setStock(int stock) {
-        this.stock = stock;
-    }
-
-    public String getBadge() {
-        return badge;
-    }
-
-    public void setBadge(String badge) {
-        this.badge = badge;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
-    }
-
-    public int getReviewCount() {
-        return reviewCount;
-    }
-
-    public void setReviewCount(int reviewCount) {
-        this.reviewCount = reviewCount;
-    }
-
-    public String getColorsData() {
-        return colorsData;
-    }
-
-    public void setColorsData(String colorsData) {
-        this.colorsData = colorsData;
-    }
-
-    public String getSizesData() {
-        return sizesData;
-    }
-
-    public void setSizesData(String sizesData) {
-        this.sizesData = sizesData;
-    }
-
-    public String getFeaturesData() {
-        return featuresData;
-    }
-
-    public void setFeaturesData(String featuresData) {
-        this.featuresData = featuresData;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
+    public ProductImage getPrimaryImage() {
+        return images.stream()
+            .filter(ProductImage::getIsPrimary)
+            .findFirst()
+            .orElse(images.isEmpty() ? null : images.get(0));
     }
 }
