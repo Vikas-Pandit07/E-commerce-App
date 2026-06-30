@@ -1353,6 +1353,919 @@ public class PaymentService {
         return MessageDigest.isEqual(a.getBytes(StandardCharsets.UTF_8), b.getBytes(StandardCharsets.UTF_8));
     }
 }
+37.CONTROLLERS
+AUTHCONTROLLER.JAVA
+package com.outloox.controller;
+
+import com.outloox.dto.*;
+import com.outloox.security.AuthCookieFactory;
+import com.outloox.service.AuthService;
+import com.outloox.service.PasswordResetService;
+import com.outloox.service.RegisterService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "${app.cors.allowed-origins:http://localhost:5173}", allowCredentials = "true")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+    private final RegisterService registerService;
+    private final PasswordResetService passwordResetService;
+    private final AuthCookieFactory authCookieFactory;
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response
+    ) {
+        LoginResponse login = authService.login(request);
+        response.addHeader(HttpHeaders.SET_COOKIE, authCookieFactory.buildAuthCookie(login.getToken()).toString());
+        return ResponseEntity.ok(login);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return ResponseEntity.ok(registerService.register(request));
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<?> verify(HttpServletRequest request) {
+        return ResponseEntity.ok(authService.verifyToken(extractJwtToken(request)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, authCookieFactory.buildLogoutCookie().toString());
+        return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.forgotPassword(request);
+        return ResponseEntity.ok(Map.of("message", "If the email exists, a password reset email has been sent"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
+        return ResponseEntity.ok(Map.of("message", "Password reset successful"));
+    }
+
+    private String extractJwtToken(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (var cookie : request.getCookies()) {
+            if ("JWT_TOKEN".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+}
+PRODUCTCONTROLLER.JAVA
+package com.outloox.controller;
+
+import com.outloox.dto.ProductResponse;
+import com.outloox.dto.response.PageResponse;
+import com.outloox.service.ProductService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/products")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductService productService;
+
+    @GetMapping("/{identifier}")
+    public ResponseEntity<ProductResponse> getProductById(@PathVariable String identifier) {
+        return ResponseEntity.ok(productService.getProductByIdentifier(identifier));
+    }
+
+    @GetMapping
+    public ResponseEntity<PageResponse<ProductResponse>> getProducts(
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Page<ProductResponse> productPage = productService.getProducts(category, pageable);
+        return ResponseEntity.ok(PageResponse.of(productPage));
+    }
+}
+38. DTOs
+LOGINREQUEST.JAVA
+package com.outloox.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class LoginRequest {
+    @NotBlank(message = "Username or email is required")
+    private String usernameOrEmail;
+
+    @NotBlank(message = "Password is required")
+    private String password;
+}
+LOGINRESPONSE.JAVA
+package com.outloox.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class LoginResponse {
+    private String username;
+    private String email;
+    private String token;
+}
+REGISTERREQUEST.JAVA
+package com.outloox.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class RegisterRequest {
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
+    private String username;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String password;
+}
+REGISTERRESPONSE.JAVA
+package com.outloox.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class RegisterResponse {
+    private String username;
+    private String email;
+}
+PRODUCTRESPONSE.JAVA
+package com.outloox.dto;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+public class ProductResponse {
+    private Integer productId;
+    private String slug;
+    private String name;
+    private String description;
+    private BigDecimal price;
+    private BigDecimal originalPrice;
+    private Integer stock;
+    private boolean inStock;
+    private String category;
+    private List<String> images;
+    private List<String> colors;
+    private List<String> sizes;
+    private List<String> features;
+    private Double rating;
+    private Integer reviews;
+    private String badge;
+    private String status;
+}
+
+PAGERESPONSE.JAVApackage com.outloox.dto.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
+
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PageResponse<T> {
+    private List<T> content;
+    private int pageNumber;
+    private int pageSize;
+    private long totalElements;
+    private int totalPages;
+    private boolean first;
+    private boolean last;
+    private boolean hasNext;
+    private boolean hasPrevious;
+
+    public static <T> PageResponse<T> of(Page<T> page) {
+        return PageResponse.<T>builder()
+                .content(page.getContent())
+                .pageNumber(page.getNumber())
+                .pageSize(page.getSize())
+                .totalElements(page.getTotalElements())
+                .totalPages(page.getTotalPages())
+                .first(page.isFirst())
+                .last(page.isLast())
+                .hasNext(page.hasNext())
+                .hasPrevious(page.hasPrevious())
+                .build();
+    }
+}
+
+39.SECURITY FILES
+JWTSERVICE.JAVA
+package com.outloox.security;
+
+import com.outloox.entity.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+@Service
+public class JwtService {
+
+    private final SecretKey key;
+    private final long expiration;
+
+    public JwtService(
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration}") long expiration
+    ) {
+        if (secret == null || secret.trim().length() < 32) {
+            throw new IllegalArgumentException("JWT secret must be at least 32 characters long");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expiration = expiration;
+    }
+
+    public String generateToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(key)
+                .claim("role", user.getRole().name())
+                .claim("userId", user.getUserId())
+                .compact();
+    }
+
+    public String extractUsername(String token) {
+        return getClaims(token).getSubject();
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            return token != null && !getClaims(token).getExpiration().before(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+}
+JWTFILTER.JAVA
+package com.outloox.security;
+
+import com.outloox.entity.User;
+import com.outloox.repository.UserRepository;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.List;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class JwtFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        String token = resolveToken(request);
+
+        try {
+            if (token != null && jwtService.isTokenValid(token)) {
+                String username = jwtService.extractUsername(token);
+                userRepository.findByUsernameAndActiveTrueAndDeletedAtIsNull(username)
+                        .ifPresent(user -> {
+                            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                    user.getUsername(),
+                                    null,
+                                    List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                            );
+                            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(auth);
+                        });
+            }
+        } catch (Exception e) {
+            log.debug("JWT authentication failed: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+        for (Cookie cookie : request.getCookies()) {
+            if ("JWT_TOKEN".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
+    }
+}
+40.EXCEPTION HANDLING
+GLOBALEXCEPTIONHANDLER.JAVA
+package com.outloox.exception;
+
+import com.outloox.dto.ApiErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusiness(BusinessException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        ApiErrorResponse response = ApiErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                "Validation failed",
+                request.getRequestURI()
+        );
+
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                fieldErrors.put(error.getField(), error.getDefaultMessage())
+        );
+        response.setFieldErrors(fieldErrors);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request.getRequestURI());
+    }
+
+    private ResponseEntity<ApiErrorResponse> build(HttpStatus status, String message, String path) {
+        return ResponseEntity.status(status)
+                .body(ApiErrorResponse.of(status.value(), status.getReasonPhrase(), message, path));
+    }
+}
+APIRESPONSE.JAVA
+package com.outloox.dto;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ApiResponse<T> {
+    @Builder.Default
+    private boolean success = true;
+    private String message;
+    private T data;
+    private String errorCode;
+    @Builder.Default
+    private LocalDateTime timestamp = LocalDateTime.now();
+
+    public static <T> ApiResponse<T> success(T data) {
+        return ApiResponse.<T>builder().success(true).data(data).build();
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return ApiResponse.<T>builder().success(false).message(message).build();
+    }
+}
+APIERRORRESPONSE.JAVA
+package com.outloox.dto;
+
+import lombok.Data;
+
+import java.time.Instant;
+import java.util.Map;
+
+@Data
+public class ApiErrorResponse {
+    private Instant timestamp;
+    private int status;
+    private String error;
+    private String message;
+    private String path;
+    private Map<String, String> fieldErrors;
+
+    public static ApiErrorResponse of(int status, String error, String message, String path) {
+        ApiErrorResponse response = new ApiErrorResponse();
+        response.timestamp = Instant.now();
+        response.status = status;
+        response.error = error;
+        response.message = message;
+        response.path = path;
+        return response;
+    }
+}
+41.DATABASE MIGRATIONS
+V1__INITIAL_SCHEMA.SQL
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL,
+    last_login_at DATETIME NULL,
+    last_login_ip VARCHAR(45) NULL,
+    login_attempts INT DEFAULT 0,
+    locked_until DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL UNIQUE,
+    description TEXT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    slug VARCHAR(150) NOT NULL UNIQUE,
+    description TEXT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    original_price DECIMAL(10,2) NULL,
+    stock INT NOT NULL DEFAULT 0,
+    badge VARCHAR(20) NULL,
+    rating DOUBLE NOT NULL DEFAULT 4.5,
+    review_count INT NOT NULL DEFAULT 0,
+    colors_data TEXT NULL,
+    sizes_data TEXT NULL,
+    features_data TEXT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL,
+    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES categories(category_id)
+);
+
+CREATE TABLE IF NOT EXISTS product_images (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    cloudinary_public_id VARCHAR(255) NULL,
+    CONSTRAINT fk_product_images_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cart (
+    cart_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE,
+    CONSTRAINT fk_cart_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    cart_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
+    product_id INT NOT NULL,
+    size_option VARCHAR(50) NULL,
+    color_option VARCHAR(50) NULL,
+    quantity INT NOT NULL,
+    price_at_add DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES cart(cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+CREATE TABLE IF NOT EXISTS addresses (
+    address_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) NOT NULL,
+    address_line TEXT NOT NULL,
+    city VARCHAR(50) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    pin_code VARCHAR(10) NOT NULL,
+    country VARCHAR(50) NOT NULL DEFAULT 'India',
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL,
+    CONSTRAINT fk_addresses_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    total_amount DECIMAL(10,2) NOT NULL,
+    order_status VARCHAR(20) NOT NULL,
+    payment_status VARCHAR(20) NOT NULL,
+    order_date DATETIME NOT NULL,
+    address_id INT NULL,
+    payment_method VARCHAR(30) NULL,
+    razorpay_order_id VARCHAR(100) NULL,
+    razorpay_payment_id VARCHAR(100) NULL,
+    razorpay_signature VARCHAR(255) NULL,
+    shipping_charge DECIMAL(10,2) NOT NULL DEFAULT 0,
+    tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL,
+    CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_orders_address FOREIGN KEY (address_id) REFERENCES addresses(address_id)
+);
+
+CREATE TABLE IF NOT EXISTS order_items (
+    order_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    size_option VARCHAR(50) NULL,
+    color_option VARCHAR(50) NULL,
+    quantity INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    user_id INT NOT NULL UNIQUE,
+    expiry_date DATETIME NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NULL,
+    CONSTRAINT fk_password_reset_tokens_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(120) NOT NULL UNIQUE,
+    setting_value TEXT NULL,
+    updated_at DATETIME NOT NULL
+);
+
+CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX idx_users_username ON users (username);
+CREATE INDEX idx_products_category ON products (category_id);
+CREATE INDEX idx_products_slug ON products (slug);
+CREATE INDEX idx_orders_user_date ON orders (user_id, order_date);
+CREATE INDEX idx_cart_items_cart ON cart_items (cart_id);
+
+V4__ADD_REFRESH_TOKENS.SQL
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(512) NOT NULL UNIQUE,
+    device_info VARCHAR(255),
+    ip_address VARCHAR(45),
+    expires_at TIMESTAMP NOT NULL,
+    revoked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_refresh_token_token (token),
+    INDEX idx_refresh_token_user (user_id)
+);
+V5__ADD_PERFORMANCE_INDEXES.SQL
+-- Order indexes
+CREATE INDEX idx_orders_user_status ON orders(user_id, order_status);
+CREATE INDEX idx_orders_payment_status ON orders(payment_status);
+CREATE INDEX idx_orders_created_date ON orders(created_at);
+CREATE INDEX idx_orders_order_status_created ON orders(order_status, created_at);
+
+-- Product indexes
+CREATE INDEX idx_products_category_status ON products(category_id, status);
+CREATE INDEX idx_products_price ON products(price);
+CREATE INDEX idx_products_rating ON products(rating);
+CREATE INDEX idx_products_badge ON products(badge);
+
+-- Full-text search for products
+ALTER TABLE products ADD FULLTEXT INDEX idx_products_search (name, description, tags);
+
+-- Cart indexes
+CREATE INDEX idx_cart_items_cart_product ON cart_items(cart_id, product_id);
+CREATE INDEX idx_cart_items_variant ON cart_items(cart_id, product_id, size_option, color_option);
+
+-- Order items indexes
+CREATE INDEX idx_order_items_order_product ON order_items(order_id, product_id);
+CREATE INDEX idx_order_items_product ON order_items(product_id);
+
+-- Address indexes
+CREATE INDEX idx_addresses_user_active ON addresses(user_id, is_active);
+CREATE INDEX idx_addresses_user_default ON addresses(user_id, is_default);
+
+-- User indexes
+CREATE INDEX idx_users_role_active ON users(role, is_active);
+
+ADDITIONAL FRONTEND FILES
+ERRORBOUNDARY.TSX
+import React, { ReactNode } from "react";
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: { componentStack: string } | null;
+}
+
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: { componentStack: string }) {
+    this.setState({ error, errorInfo });
+    console.error("ErrorBoundary caught:", error, errorInfo);
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="max-w-md w-full mx-4 p-6 bg-destructive/10 border border-destructive/30 rounded-lg">
+            <h2 className="text-lg font-bold text-destructive mb-2">Something went wrong</h2>
+            <p className="text-muted-foreground text-sm mb-4">
+              {this.state.error?.message || "An unexpected error occurred. Please try again."}
+            </p>
+            <button
+              onClick={this.handleReset}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded font-medium transition"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+PROTECTEDROUTE.TSX
+import type { ReactElement } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+export default function ProtectedRoute({
+  children,
+  requireAdmin = false,
+}: {
+  children: ReactElement;
+  requireAdmin?: boolean;
+}) {
+  const { loading, isAuthenticated, isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <span className="w-5 h-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <span className="uppercase tracking-widest text-xs">Checking session</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  if (requireAdmin && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+HEADER.TSX
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
+import { useToast } from '../context/ToastContext';
+import { Heart, Menu, Search, ShoppingBag, User, X } from '../lib/icons';
+import type { CartStore } from '../lib/cartStore';
+
+interface HeaderProps {
+  cart: CartStore;
+}
+
+export default function Header({ cart }: HeaderProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, isAdmin, user, logout } = useAuth();
+  const { count: wishlistCount } = useWishlist();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
+
+  const navLinks = [
+    { to: '/shop?category=men', label: 'Men' },
+    { to: '/shop?category=women', label: 'Women' },
+    { to: '/shop?category=sneakers', label: 'Sneakers' },
+    { to: '/shop', label: 'New Arrivals' },
+    { to: '/shop', label: 'Sale' },
+    { to: '/about', label: 'About' },
+    ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
+  ];
+
+  return (
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      isScrolled ? 'bg-background/95 backdrop-blur-md border-b border-border' : 'bg-transparent'
+    }`}>
+      <div className="bg-primary text-primary-foreground text-xs font-medium">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-center gap-6 overflow-hidden">
+          <span>FREE SHIPPING ABOVE ₹999</span>
+          <span className="hidden sm:inline">|</span>
+          <span className="hidden sm:inline">EASY RETURNS</span>
+          <span className="hidden sm:inline">|</span>
+          <span className="hidden md:inline">SECURE PAYMENTS</span>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20 gap-4">
+          <button onClick={() => setIsMenuOpen((value) => !value)} className="lg:hidden p-2 -ml-2 text-foreground hover:text-primary transition-colors">
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
+          <Link to="/" className="flex items-center group shrink-0">
+            <span className="font-display text-2xl sm:text-3xl font-bold tracking-wider text-foreground transition-transform duration-300 group-hover:scale-105">
+              OUT<span className="text-primary">LOOX</span>
+            </span>
+          </Link>
+
+          <nav className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link key={link.label} to={link.to} className="relative text-sm font-medium text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wide group">
+                {link.label}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
+              </Link>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-1 sm:gap-3">
+            <form onSubmit={handleSearch} className="hidden md:flex items-center relative">
+              <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-48 lg:w-56 bg-muted border border-border rounded-full py-1.5 pl-4 pr-10 text-sm text-foreground placeholder-muted-foreground focus:border-primary transition-colors" />
+              <button type="submit" className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"><Search size={16} /></button>
+            </form>
+
+            <Link to="/wishlist" className="hidden sm:flex relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+              <Heart size={22} />
+              {wishlistCount > 0 && <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">{wishlistCount > 9 ? '9+' : wishlistCount}</span>}
+            </Link>
+
+            {isAuthenticated ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link to="/profile" className="flex p-2 text-muted-foreground hover:text-foreground transition-colors"><User size={22} /></Link>
+                <button onClick={async () => { await logout(); showToast('Logged out successfully.', 'success'); navigate('/'); }} className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">{user?.username}</button>
+              </div>
+            ) : (
+              <Link to="/login" className="hidden sm:flex p-2 text-muted-foreground hover:text-foreground transition-colors"><User size={22} /></Link>
+            )}
+
+            <Link to="/cart" className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ShoppingBag size={22} />
+              {cart.totalItems > 0 && <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full animate-pulse-glow">{cart.totalItems > 9 ? '9+' : cart.totalItems}</span>}
+            </Link>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 
 You're absolutely right! I didn't provide the complete frontend structure with all files. Let me provide the **complete frontend structure** with all necessary files.
 
