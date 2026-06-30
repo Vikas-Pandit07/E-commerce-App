@@ -1,13 +1,27 @@
-FROM eclipse-temurin:21-jdk AS build
-WORKDIR /app
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw
-COPY src ./src
-RUN ./mvnw -DskipTests clean package
+FROM openjdk:21-jdk-slim AS builder
 
-FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+RUN chmod +x mvnw
+RUN ./mvnw dependency:go-offline
+
+COPY src src
+RUN ./mvnw clean package -DskipTests
+
+FROM openjdk:21-jdk-slim
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+RUN addgroup --system --gid 1000 appgroup && \
+    adduser --system --uid 1000 --gid 1000 appuser
+
+USER appuser
+
 EXPOSE 9090
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+
+ENTRYPOINT ["java", "-jar", "-Xmx1g", "-Xms512m", "-XX:+UseG1GC", "app.jar"]
